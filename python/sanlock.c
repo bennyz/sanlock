@@ -1659,26 +1659,28 @@ Arguments\n\
   lockspace         lockspace name (str)\n\
   resource          resource name (int)\n\
   disks             path and offset (tuple)\n\
+  size              Amount of data to read (int)\n\
 \n\
 Returns\n\
   data              data written with set_lvb\n\
 Notes\n\
 \n\
-The resource must be acquired with lvb=True\n");
+The resource must be acquired with lvb=True\n\
+size is required and has to be > 0.\n");
 static PyObject *
 py_get_lvb(PyObject *self __unused, PyObject *args, PyObject *keywds)
 {
-    uint32_t flags = 0;
+    uint32_t flags = 0, lvb_size = 0;
     int rv = -1;
     struct sanlk_resource *res = NULL;
     PyObject *lockspace = NULL, *resource = NULL;
     PyObject *disks;
-    char data[512];
+    char *lvb_data = NULL;
 
-    static char *kwlist[] = {"lockspace", "resource", "disks", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O&O&O!", kwlist,
+    static char *kwlist[] = {"lockspace", "resource", "disks", "size", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O&O&O!K", kwlist,
         convert_to_pybytes, &lockspace, convert_to_pybytes, &resource,
-        &PyList_Type, &disks)) {
+        &PyList_Type, &disks, &lvb_size)) {
         goto finally;
     }
 
@@ -1688,9 +1690,10 @@ py_get_lvb(PyObject *self __unused, PyObject *args, PyObject *keywds)
 
     strncpy(res->lockspace_name, PyBytes_AsString(lockspace), SANLK_NAME_LEN);
     strncpy(res->name, PyBytes_AsString(resource), SANLK_NAME_LEN);
+    lvb_data = calloc(lvb_size, sizeof(char));
 
     Py_BEGIN_ALLOW_THREADS
-    rv = sanlock_get_lvb(flags, res, data, sizeof(data));
+    rv = sanlock_get_lvb(flags, res, lvb_data, lvb_size);
     Py_END_ALLOW_THREADS
 
     if (rv < 0) {
@@ -1705,7 +1708,7 @@ finally:
     if (rv < 0)
         return NULL;
 
-    return Py_BuildValue("y", data);
+    return Py_BuildValue("y#", lvb_data, lvb_size);
 }
 
 static PyMethodDef
