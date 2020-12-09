@@ -1607,7 +1607,9 @@ Arguments\n\
 \n\
 Notes\n\
 \n\
-The resource must be acquired with the SANLK_ACQUIRE_LVB flag\n");
+The resource must be acquired with lvb=true.\n\
+The size of data is limited by the sector size (512/4K).\n\
+The new data is visible after the resource is released\n");
 static PyObject *
 py_set_lvb(PyObject *self __unused, PyObject *args, PyObject *keywds)
 {
@@ -1662,7 +1664,7 @@ Returns\n\
   data              data written with set_lvb\n\
 Notes\n\
 \n\
-The resource must be acquired with the SANLK_ACQUIRE_LVB flag\n");
+The resource must be acquired with lvb=True\n");
 static PyObject *
 py_get_lvb(PyObject *self __unused, PyObject *args, PyObject *keywds)
 {
